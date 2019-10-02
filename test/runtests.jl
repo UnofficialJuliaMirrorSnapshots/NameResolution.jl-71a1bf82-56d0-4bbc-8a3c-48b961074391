@@ -123,3 +123,26 @@ end
     @test lambda.solved.bounds[:y].is_mutable.x === true
     @test lambda.solved[:y].is_mutable.x === true
 end
+
+
+@testset "scope extrusion" begin
+    @test_throws Any begin
+        ana = top_analyzer()
+        !is_local(ana, :x)
+        !is_global(ana, :x)
+        enter!(ana, :x)
+        run_analyzer(ana)
+    end
+end
+
+@testset "deeper scope" begin
+    ana = top_analyzer()
+    is_local!(ana, :x)
+    enter!(ana, :x)
+    shallow = child_analyzer!(ana, true)
+    deep = child_analyzer!(shallow, true)
+    require!(deep, :x)
+    run_analyzer(ana)
+
+    @test haskey(shallow.solved.freevars, :x)
+end

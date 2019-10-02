@@ -33,6 +33,7 @@ end
 function require!(:: Nothing, sym::Symbol) end
 
 function request_freevar!(ana::Analyzer, var :: LocalVar)
+
     scope = ana.solved
     sym = var.sym
     bound = get(scope.bounds, var.sym, nothing)
@@ -68,7 +69,7 @@ function abs_interp_on_scopes(analyzer::Analyzer, inherited::D) where {
 
     both_local_and_global = intersect(globals, locals)
     if !isempty(both_local_and_global)
-        vars = join(map(string, both_local_and_global), ", ")
+        vars = join([string(x) for x in both_local_and_global], ", ")
         error("syntax: variable \"$vars\" declared both local and global")
     end
 
@@ -120,7 +121,7 @@ function abs_interp_on_scopes(analyzer::Analyzer, inherited::D) where {
         if is_physical_scope
             freevars[sym] = var
         end
-        request_freevar!(analyzer, var)
+        request_freevar!(analyzer.parent, var)
     end
     inherited = VarMap(inherited..., bounds...)
     for child in analyzer.children
