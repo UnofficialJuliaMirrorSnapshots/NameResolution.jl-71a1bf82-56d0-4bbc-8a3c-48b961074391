@@ -88,10 +88,7 @@ function abs_interp_on_scopes(analyzer::Analyzer, inherited::D) where {
         @label when_avaiable_outside
             var = inherited[sym]
             var.is_mutable.x = true
-            if is_physical_scope
-                freevars[sym] = var
-            end
-            request_freevar!(analyzer.parent, var)
+            request_freevar!(analyzer, var)
             continue
         @label when_bound
             var = get(bounds, sym, nothing)
@@ -107,6 +104,12 @@ function abs_interp_on_scopes(analyzer::Analyzer, inherited::D) where {
         if sym in globals
             continue
         elseif sym in locals
+            var = get(bounds, sym, nothing)
+            if var === nothing
+                # uninitialized variables
+                # TODO: add facilities to analyse the uninitialized variables
+                bounds[sym] = LocalVar(Ref(false), Ref(false), sym)
+            end
             continue
         elseif haskey(inherited, sym)
             # case for free variable
@@ -118,10 +121,7 @@ function abs_interp_on_scopes(analyzer::Analyzer, inherited::D) where {
         end
         # is free variable
         var = inherited[sym]
-        if is_physical_scope
-            freevars[sym] = var
-        end
-        request_freevar!(analyzer.parent, var)
+        request_freevar!(analyzer, var)
     end
     inherited = VarMap(inherited..., bounds...)
     for child in analyzer.children
